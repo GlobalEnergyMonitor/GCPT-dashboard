@@ -40,21 +40,28 @@ def sort_status(df):
 # ===================================
 layout_chosen = '2 columns'  # options: '1 column', '2 columns'
 
-# filepath = 'https://github.com/masoninman/demo-dashboard-GCPT-1/blob/main/GCPT%20data%202021-07%20-%20processed%20for%20Dash%202022-01-26.xlsx?raw=true'
 filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-01%20-%20processed%20for%20Dash%202022-02-08_1627.xlsx?raw=true'
-
+# ===================================
 dash_data_xl = pd.ExcelFile(filepath, engine='openpyxl')
 gcpt_map = pd.read_excel(dash_data_xl, sheet_name='map')
 gcpt_status = pd.read_excel(dash_data_xl, sheet_name='status')
-gcpt_status = sort_status(gcpt_status)
 gcpt_age = pd.read_excel(dash_data_xl, sheet_name='age')
 gcpt_add = pd.read_excel(dash_data_xl, sheet_name='additions')
+
+# clean status df
+gcpt_status = sort_status(gcpt_status)
 
 # create list of countries to choose from (GEM country names)
 # data in gcpt_status is most complete; 
 # for example, gcpt_status includes Albania, which only has cancelled units
 gcpt_country_list = gcpt_status['Country'].sort_values().unique().tolist()
-gcpt_country_list_for_dropdown = ['all'] + gcpt_country_list
+if gcpt_country_list[0] != 'all':
+    if 'all' in gcpt_country_list:
+        gcpt_country_list.remove('all')
+    else:
+        pass
+
+    gcpt_country_list_for_dropdown = ['all'] + gcpt_country_list
 
 # ===================================
 # ### Create country dropdown menu
