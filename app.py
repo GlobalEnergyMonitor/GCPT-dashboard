@@ -15,8 +15,9 @@ import plotly.express as px
 # ===================================
 layout_chosen = '2 columns'  # options: '1 column', '2 columns'
 
-filepath = 'https://github.com/masoninman/demo-dashboard-GCPT-1/blob/main/GCPT%20data%202021-07%20-%20processed%20for%20Dash%202022-01-26.xlsx?raw=true'
-    
+# filepath = 'https://github.com/masoninman/demo-dashboard-GCPT-1/blob/main/GCPT%20data%202021-07%20-%20processed%20for%20Dash%202022-01-26.xlsx?raw=true'
+filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-01%20-%20processed%20for%20Dash%202022-02-08_1627.xlsx?raw=true'
+
 dash_data_xl = pd.ExcelFile(filepath, engine='openpyxl')
 gcpt_map = pd.read_excel(dash_data_xl, sheet_name='map')
 gcpt_status = pd.read_excel(dash_data_xl, sheet_name='status')  
