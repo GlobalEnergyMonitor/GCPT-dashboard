@@ -1,8 +1,9 @@
 import pandas as pd
+from pandas.api.types import CategoricalDtype
 import numpy as np
 
 import dash
-# import dash_core_components as dcc # old method; new method is below
+# import dash_core_components as dcc # don't use this old method; new method is below
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
@@ -10,24 +11,57 @@ from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 
 import plotly.graph_objs as go
-import plotly.express as px
+
+# ===================================
+def sort_status(df):
+    """
+    convert column 'Status' to categorical
+    https://pandas.pydata.org/pandas-docs/stable/user_guide/categorical.html
+    """
+    
+    status_order = [
+        'operating',
+        'mothballed',
+        'announced',
+        'pre-permit',
+        'permitted',
+        'construction',
+        'retired',
+        'shelved',
+        'cancelled',
+    ]
+    df['Status'] = df['Status'].astype(
+        CategoricalDtype(status_order, ordered=False)
+    )    
+    df = df.sort_values(by=['Country', 'Status', 'Year'])
+    
+    return df
 
 # ===================================
 layout_chosen = '2 columns'  # options: '1 column', '2 columns'
 
-filepath = 'https://github.com/masoninman/demo-dashboard-GCPT-1/blob/main/GCPT%20data%202021-07%20-%20processed%20for%20Dash%202022-01-26.xlsx?raw=true'
-    
+filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-01%20-%20processed%20for%20Dash%202022-02-08_1627.xlsx?raw=true'
+# ===================================
 dash_data_xl = pd.ExcelFile(filepath, engine='openpyxl')
 gcpt_map = pd.read_excel(dash_data_xl, sheet_name='map')
-gcpt_status = pd.read_excel(dash_data_xl, sheet_name='status')  
+gcpt_status = pd.read_excel(dash_data_xl, sheet_name='status')
 gcpt_age = pd.read_excel(dash_data_xl, sheet_name='age')
 gcpt_add = pd.read_excel(dash_data_xl, sheet_name='additions')
+
+# clean status df
+gcpt_status = sort_status(gcpt_status)
 
 # create list of countries to choose from (GEM country names)
 # data in gcpt_status is most complete; 
 # for example, gcpt_status includes Albania, which only has cancelled units
 gcpt_country_list = gcpt_status['Country'].sort_values().unique().tolist()
-gcpt_country_list_for_dropdown = ['all'] + gcpt_country_list
+if gcpt_country_list[0] != 'all':
+    if 'all' in gcpt_country_list:
+        gcpt_country_list.remove('all')
+    else:
+        pass
+
+    gcpt_country_list_for_dropdown = ['all'] + gcpt_country_list
 
 # ===================================
 # ### Create country dropdown menu
@@ -139,15 +173,15 @@ fig_map = create_chart_choro(
 
 # format of color dictionary follows GreenInfo map code
 gcpt_tableau_map_colors = {
-  'Announced': {'id': 0, 'text': 'Announced', 'color': '#76b7b2'},
-  'Pre-permit': {'id': 1, 'text': 'Pre-permit', 'color': '#edc948'},
-  'Permitted': {'id': 2, 'text': 'Permitted', 'color': '#b07aa1'},
-  'Construction': {'id': 3, 'text': 'Construction', 'color': '#59a14f'},
-  'Shelved': {'id': 4, 'text': 'Shelved', 'color': '#a9b5ae'},
-  'Retired': {'id': 5, 'text': 'Retired', 'color': '#f28e2b'},
-  'Cancelled': {'id': 6, 'text': 'Cancelled', 'color': '#767676'},
-  'Operating': {'id': 7, 'text': 'Operating', 'color': '#4e79a7'},
-  'Mothballed': {'id': 8, 'text': 'Mothballed', 'color': '#9c755f'},
+  'announced': {'id': 0, 'text': 'Announced', 'color': '#76b7b2'},
+  'pre-permit': {'id': 1, 'text': 'Pre-permit', 'color': '#edc948'},
+  'permitted': {'id': 2, 'text': 'Permitted', 'color': '#b07aa1'},
+  'construction': {'id': 3, 'text': 'Construction', 'color': '#59a14f'},
+  'shelved': {'id': 4, 'text': 'Shelved', 'color': '#a9b5ae'},
+  'retired': {'id': 5, 'text': 'Retired', 'color': '#f28e2b'},
+  'cancelled': {'id': 6, 'text': 'Cancelled', 'color': '#767676'},
+  'operating': {'id': 7, 'text': 'Operating', 'color': '#4e79a7'},
+  'mothballed': {'id': 8, 'text': 'Mothballed', 'color': '#9c755f'},
 }
 
 def create_chart_by_status(gcpt_status, sel_country):
@@ -181,6 +215,7 @@ def create_chart_by_status(gcpt_status, sel_country):
             y = -0.1,
             xanchor = 'left',
             x = 0,
+            traceorder = 'normal',
         ),
     )
 
@@ -252,6 +287,7 @@ def create_chart_age_type(gcpt_age, sel_country):
             y = -0.25,
             xanchor = 'left',
             x = 0,
+            traceorder = 'normal',
         ),
     )
 
