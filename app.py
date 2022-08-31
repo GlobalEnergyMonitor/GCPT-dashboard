@@ -106,7 +106,6 @@ def create_chart_choro(gcpt_map, sel_country):
         sel_resolution = 110
         # this drives update using fitbounds
         gcpt_map_sel = gcpt_map
-        # note: removed .copy() above; not needed?
         
     else:        
         # for showing individual countries, set higher resolution (smaller scale features) 
