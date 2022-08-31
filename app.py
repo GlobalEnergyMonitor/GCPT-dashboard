@@ -553,6 +553,4 @@ def update_figure(sel_country):
 #     # )
 
 if __name__ == '__main__':
-    # app.run_server()
-    # for testing:
-    app.run_server(debug=True)
+    app.run_server()
