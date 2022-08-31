@@ -44,15 +44,8 @@ def sort_status(df):
 # ===================================
 layout_chosen = '2 columns'  # options: '1 column', '2 columns'
 
-# TO DO: remove line below
-# filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-01%20-%20processed%20for%20Dash%202022-02-08_1627.xlsx?raw=true'
+filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-07%20-%20processed%20for%20Dash%202022-08-31_1036.xlsx?raw=true'
 
-# TO DO: for production, use filepath below:
-# TO DO: upload this file to GitHub first!
-# filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-07%20-%20processed%20for%20Dash%202022-08-31_1036.xlsx?raw=true'
-
-# for testing, use local version:
-filepath = '/Users/masoninman/Dev/GCPT-dashboard/data/GCPT dashboard data 2022-07 - processed for Dash 2022-08-31_1036.xlsx'
 # ===================================
 dash_data_xl = pd.ExcelFile(filepath, engine='openpyxl')
 gcpt_map = pd.read_excel(dash_data_xl, sheet_name='map')
