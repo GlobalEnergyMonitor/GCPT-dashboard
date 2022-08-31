@@ -342,16 +342,19 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
 
     # add line for net additions
     # https://plotly.com/python/graphing-multiple-chart-types/#line-chart-and-a-bar-chart
-    for status in ['Net added']:
-        df_status = df[['Year', 'Net added']].set_index('Year')
-        fig_add.add_trace(go.Scatter(
-            x = df_status.index,
-            y = df_status['Net added'],
-            name = 'Net added',
-            mode='markers',
-            marker_color='black',
-            hoverinfo='skip',
-        ))
+    df_status = df[['Year', 'Net added']].set_index('Year')
+
+    print("Show df_status:")
+    print(df_status)
+
+    fig_add.add_trace(go.Scatter(
+        x = df_status.index,
+        y = df_status['Net added'],
+        name = 'Net added',
+        mode='markers',
+        marker_color='black',
+        hoverinfo='skip',
+    ))
 
     # update overall layout
     fig_add.update_layout(
