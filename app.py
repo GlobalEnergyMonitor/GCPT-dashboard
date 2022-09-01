@@ -1,6 +1,7 @@
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 import numpy as np
+import xlsxwriter
 
 import dash
 # import dash_core_components as dcc # don't use this old method; new method is below
@@ -13,6 +14,8 @@ import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 
 # ===================================
+# Key parameters
+release_date = 'July 2022'
 # ===================================
 def sort_status(df):
     """
@@ -41,7 +44,8 @@ def sort_status(df):
 # ===================================
 layout_chosen = '2 columns'  # options: '1 column', '2 columns'
 
-filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-01%20-%20processed%20for%20Dash%202022-02-08_1627.xlsx?raw=true'
+filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-07%20-%20processed%20for%20Dash%202022-08-31_1036.xlsx?raw=true'
+
 # ===================================
 dash_data_xl = pd.ExcelFile(filepath, engine='openpyxl')
 gcpt_map = pd.read_excel(dash_data_xl, sheet_name='map')
@@ -72,8 +76,6 @@ dropdown_options_list_of_dicts = [] # initialize
 for country in gcpt_country_list_for_dropdown:
     dropdown_options_list_of_dicts += [{'label': country, 'value': country}] 
 
-dropdown_options_list_of_dicts += [{'title': 'Select a country'}]
-
 # create dropdown menu
 country_dropdown = dcc.Dropdown(
     id = 'country_dropdown',
@@ -103,7 +105,7 @@ def create_chart_choro(gcpt_map, sel_country):
     if sel_country == 'all':
         sel_resolution = 110
         # this drives update using fitbounds
-        gcpt_map_sel = gcpt_map.copy()
+        gcpt_map_sel = gcpt_map
         
     else:        
         # for showing individual countries, set higher resolution (smaller scale features) 
@@ -130,6 +132,8 @@ def create_chart_choro(gcpt_map, sel_country):
             # aspects that do change with sel_country:
             locations = gcpt_map_sel['iso_alpha'],
             z = gcpt_map_sel['capacity log10 + 1'], # data to be color-coded
+            # use separate column for hover text with original capacity values
+            # (data for choropleth is log scale)
             hovertemplate = gcpt_map_sel['hover_text'],
     ))
 
@@ -148,6 +152,9 @@ def create_chart_choro(gcpt_map, sel_country):
                 visible=True,
             ),
     )
+
+    # TO DO: remove line below, or fix it; it wasn't doing anything
+    # fig_map.update_coloraxes(colorbar_exponentformat="power")
 
     # based on: https://plotly.com/python/choropleth-maps/
     # referred by: https://plotly.com/python/map-configuration/#automatic-zooming-or-bounds-fitting
@@ -201,7 +208,7 @@ def create_chart_by_status(gcpt_status, sel_country):
             y = df_status['Capacity (MW)'], 
             name = status, 
             marker_color = color_status,
-            hoverinfo='skip',
+            hovertemplate = status + ': %{y:,.0f} MW<extra></extra>', # Capacity
         ))
 
     fig_status.update_layout(
@@ -247,6 +254,17 @@ def create_chart_age_type(gcpt_age, sel_country):
     
     gcpt_age_sel_country = gcpt_age[gcpt_age['Country'] == sel_country].drop('Country', axis=1)
     gcpt_age_sel_country = gcpt_age_sel_country.set_index('decade')
+    decades = ['0-9 years', '10-19 years', '20-29 years', '30-39 years', '40-49 years', '50+ years']
+    for decade in decades:
+        if decade not in gcpt_age_sel_country.index:
+            new_row_df = pd.DataFrame(
+                data = [[0]*len(technologies_in_order)], 
+                columns = technologies_in_order, 
+                index=[decade]
+                )
+            gcpt_age_sel_country = gcpt_age_sel_country.concat(new_row_df)
+
+    gcpt_age_sel_country = gcpt_age_sel_country.sort_index()
 
     technologies_in_order = [
         'Ultra-supercritical',
@@ -256,14 +274,6 @@ def create_chart_age_type(gcpt_age, sel_country):
         'CFB',
         'Unknown',
     ]
-    
-    # TEST: check that technologies are in the desired order (specified above)
-    if sel_country == 'all':
-        if set(technologies_in_order) == set(gcpt_age_sel_country.columns.tolist()):
-            pass
-        else:
-            print("Error!" + "Specified order of technologies was different from the list of all technologies.")
-    # END OF TEST
 
     gcpt_age_sel_country.columns.tolist()
     for technology in technologies_in_order:
@@ -273,7 +283,7 @@ def create_chart_age_type(gcpt_age, sel_country):
             y = gcpt_age_sel_country.index, 
             orientation = 'h',
             marker_color = age_tech_pallette[technology],
-            hoverinfo = 'skip',
+            hovertemplate = technology + ': %{x:,.0f} MW<extra></extra>',
         ))
 
     fig_age.update_layout(
@@ -327,21 +337,21 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
             x = df_status.index, 
             y = df_status[status], # values are capacities (MW)
             name=status, 
-            hoverinfo='skip',
+            hovertemplate = status + ': %{x:,.0f} MW<extra></extra>',
         ))
 
     # add line for net additions
     # https://plotly.com/python/graphing-multiple-chart-types/#line-chart-and-a-bar-chart
-    for status in ['Net added']:
-        df_status = df[['Year', 'Net added']].set_index('Year')
-        fig_add.add_trace(go.Scatter(
-            x = df_status.index,
-            y = df_status['Net added'],
-            name = 'Net added',
-            mode='markers',
-            marker_color='black',
-            hoverinfo='skip',
-        ))
+    df_status = df[['Year', 'Net added']].set_index('Year')
+
+    fig_add.add_trace(go.Scatter(
+        x = df_status.index,
+        y = df_status['Net added'],
+        name = 'Net added',
+        mode='markers',
+        marker_color='black',
+        hoverinfo='skip',
+    ))
 
     # update overall layout
     fig_add.update_layout(
@@ -374,6 +384,7 @@ app = dash.Dash(
     __name__, 
     external_stylesheets=[dbc.themes.BOOTSTRAP]
     )
+
 # title based on: https://community.plotly.com/t/how-do-you-set-page-title/40115
 app.title = "Coal Power dashboard"
 server = app.server
@@ -381,9 +392,9 @@ server = app.server
 # ===================================
 # Create graphs of charts
 
-# dash_header = html.H2(children='Coal power dashboard')
-
 dropdown_title = html.H6(children='Select a country:')
+download_text = html.H6(children='Download figure data:')
+download_button = html.Button("Download Excel file", id="btn_xlsx"),
 
 choro_graph = dcc.Graph(
     id='chart_choro', 
@@ -416,20 +427,29 @@ if layout_chosen == '1 column':
     # 1-column version
     app.layout = dbc.Container(fluid = True, children = [
         dbc.Row([dbc.Col(country_dropdown)], align='center'),
-        dbc.Row([dbc.Col(choro_graph)],        align='center'),
-        dbc.Row([dbc.Col(status_graph)],       align='center'),
-        dbc.Row([dbc.Col(age_graph)],          align='center'),
-        dbc.Row([dbc.Col(add_graph)],          align='center'),
+        dbc.Row([dbc.Col(choro_graph)], align='center'),
+        dbc.Row([dbc.Col(status_graph)], align='center'),
+        dbc.Row([dbc.Col(age_graph)], align='center'),
+        dbc.Row([dbc.Col(add_graph)], align='center'),
     ],
     )
 elif layout_chosen == '2 columns':
     # 2-column version
+    # download based on: https://dash.plotly.com/dash-core-components/download
     app.layout = dbc.Container(fluid = True, children = [
         dbc.Row([
             dbc.Col([
                 dbc.Row(dropdown_title),
                 dbc.Row(country_dropdown),
             ], md = 4),
+            dbc.Col([], xl = 5), # spacer
+            # # section for download button:
+            # dbc.Col([
+            #     dbc.Row(download_text),
+            #     dbc.Row(download_button),
+            #     html.Div(id='dynamic-dropdown-container', children=[]), # EXPERIMENTAL
+            #     dcc.Download(id="download-dataframe-xlsx"),
+            # ], md = 2),
         ]),
         dbc.Row([
             dbc.Col(choro_graph, xl = 6, align="start"),
@@ -439,6 +459,11 @@ elif layout_chosen == '2 columns':
             dbc.Col(age_graph, xl = 6, align="start"),
             dbc.Col(add_graph, xl = 6, align="start"),
         ]),
+        dbc.Row([
+            dbc.Col([
+                html.H6(f'Data from Global Coal Plant Tracker, {release_date} release'),
+            ]),
+        ]),
     ],
     )
 
@@ -447,8 +472,8 @@ elif layout_chosen == '2 columns':
     Output('chart_status', 'figure'),
     Output('chart_age', 'figure'),
     Output('chart_add', 'figure'),
-    Input('country_dropdown', 'value'))
-
+    Input('country_dropdown', 'value'), 
+)
 def update_figure(sel_country):
     fig_map = create_chart_choro(
         gcpt_map = gcpt_map, 
@@ -472,6 +497,60 @@ def update_figure(sel_country):
     fig_add.update_layout(transition_duration=500)
 
     return fig_map, fig_status, fig_age, fig_add
+
+# # Section for download file
+# @app.callback(
+#     Output("download-dataframe-xlsx", "data"), # for download button
+#     Output('dynamic-dropdown-container', 'children'), # EXPERIMENTAL
+#     # Output('country_dropdown', 'value'),
+#     Input("btn_xlsx", "n_clicks"), # for download button
+#     prevent_initial_call=True,
+# )
+# def func(n_clicks, children):
+#     """For download button"""
+#     # hardcode value for testing
+#     sel_country = 'Bangladesh'
+
+#     status_sel = gcpt_status.copy()[gcpt_status['Country']==sel_country]
+#     status_sel['Status'] = status_sel['Status'].astype(str)
+#     status_sel = status_sel.set_index(['Year', 'Status'])[['Capacity (MW)']]
+#     status_sel = status_sel.unstack(-1)
+
+#     # drop level for columns to remove 'Capacity (MW)'
+#     status_sel = status_sel.droplevel(0, axis=1)
+#     status_sel = status_sel.reset_index()
+#     status_sel = status_sel.rename(columns={'Year': 'year'})
+
+#     # TO DO: write header row that contains Country (and more)
+#     table_title = f"{sel_country} - Coal Power Capacity (MW) by Status"
+
+#     # Create a Pandas Excel writer using XlsxWriter as the engine.
+#     writer = pd.ExcelWriter('Global Coal Plant Tracker dashboard export.xlsx', engine='xlsxwriter')
+
+#     # Write each dataframe to a different worksheet.
+#     status_sheet_name = 'Capacity by Status'
+#     status_sel.to_excel(
+#         writer, 
+#         sheet_name=status_sheet_name, 
+#         startrow=1, 
+#         index=False
+#     )
+#     sheet1 = writer.sheets[status_sheet_name]
+#     sheet1.write('A1', table_title)
+#     # df2.to_excel(writer, sheet_name='Sheet2')
+#     # df3.to_excel(writer, sheet_name='Sheet3')
+
+#     # Close the Pandas Excel writer and output the Excel file.
+#     writer.save()
+
+#     return dcc.send_file('Global Coal Plant Tracker dashboard export.xlsx')
+
+#     # return dcc.send_data_frame(
+#     #     status_sel.to_excel, 
+#     #     "GCPT_dash_export.xlsx", 
+#     #     sheet_name="Capacity by Status", 
+#     #     index=False,
+#     # )
 
 if __name__ == '__main__':
     app.run_server()
