@@ -4,7 +4,6 @@ import numpy as np
 import xlsxwriter
 
 import dash
-# import dash_core_components as dcc # don't use this old method; new method is below
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
@@ -15,7 +14,7 @@ import plotly.graph_objs as go
 
 # ===================================
 # Key parameters
-release_date = 'July 2022'
+release_date = 'January 2023'
 # ===================================
 def sort_status(df):
     """
@@ -44,7 +43,8 @@ def sort_status(df):
 # ===================================
 layout_chosen = '2 columns'  # options: '1 column', '2 columns'
 
-filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-07%20-%20processed%20for%20Dash%202022-08-31_1036.xlsx?raw=true'
+# filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-07%20-%20processed%20for%20Dash%202022-08-31_1036.xlsx?raw=true'
+filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202023-02%20-%20processed%20for%20Dash%202023-02-13_1526.xlsx?raw=true'
 
 # ===================================
 dash_data_xl = pd.ExcelFile(filepath, engine='openpyxl')
