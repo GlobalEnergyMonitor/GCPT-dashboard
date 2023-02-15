@@ -337,7 +337,7 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
             x = df_status.index, 
             y = df_status[status], # values are capacities (MW)
             name=status, 
-            hovertemplate = status + ': %{x:,.0f} MW<extra></extra>',
+            hovertemplate = status + ': %{y:,.0f} MW<extra></extra>',
         ))
 
     # add line for net additions
