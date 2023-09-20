@@ -1,7 +1,7 @@
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 import numpy as np
-import xlsxwriter
+# import xlsxwriter
 
 import dash
 from dash import dcc
@@ -14,14 +14,14 @@ import plotly.graph_objs as go
 
 # ===================================
 # Key parameters
-release_date = 'January 2023'
+# release_date = 'July 2023'
+release_date = 'August 2023'
 # ===================================
 def sort_status(df):
     """
     convert column 'Status' to categorical
     https://pandas.pydata.org/pandas-docs/stable/user_guide/categorical.html
     """
-    
     status_order = [
         'operating',
         'mothballed',
@@ -33,6 +33,7 @@ def sort_status(df):
         'shelved',
         'cancelled',
     ]
+    
     df['Status'] = df['Status'].astype(
         CategoricalDtype(status_order, ordered=False)
     )    
@@ -44,9 +45,10 @@ def sort_status(df):
 layout_chosen = '2 columns'  # options: '1 column', '2 columns'
 
 # filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202022-07%20-%20processed%20for%20Dash%202022-08-31_1036.xlsx?raw=true'
-filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202023-02%20-%20processed%20for%20Dash%202023-02-13_1526.xlsx?raw=true'
+# filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202023-02%20-%20processed%20for%20Dash%202023-02-13_1526.xlsx?raw=true'
+filepath = 'https://github.com/GlobalEnergyMonitor/GCPT-dashboard/blob/main/data/GCPT%20dashboard%20data%202023-08%20-%20processed%20for%20Dash%202023-09-07_1623.xlsx?raw=true'
 
-# ===================================
+# # ===================================
 dash_data_xl = pd.ExcelFile(filepath, engine='openpyxl')
 gcpt_map = pd.read_excel(dash_data_xl, sheet_name='map')
 gcpt_status = pd.read_excel(dash_data_xl, sheet_name='status')
@@ -72,16 +74,16 @@ if gcpt_country_list[0] != 'all':
 # ### Create country dropdown menu
 
 # create list of dicts needed for dropdown menu
-dropdown_options_list_of_dicts = [] # initialize
+dropdown_options_list_of_dicts = []  # initialize
 for country in gcpt_country_list_for_dropdown:
     dropdown_options_list_of_dicts += [{'label': country, 'value': country}] 
 
 # create dropdown menu
 country_dropdown = dcc.Dropdown(
-    id = 'country_dropdown',
-    options = dropdown_options_list_of_dicts,
-    value = 'all', # default starting value
-    placeholder = 'Select a country', # only shows up if user clears entry
+    id='country_dropdown',
+    options=dropdown_options_list_of_dicts,
+    value='all', # default starting value
+    placeholder='Select a country' # only shows up if user clears entry
 )
 
 # ===================================
@@ -109,41 +111,41 @@ def create_chart_choro(gcpt_map, sel_country):
         
     else:        
         # for showing individual countries, set higher resolution (smaller scale features) 
-        sel_resolution = 50 
+        sel_resolution = 50
         # this drives update using fitbounds
-        gcpt_map_sel = gcpt_map[gcpt_map['Country']==sel_country]
+        gcpt_map_sel = gcpt_map[gcpt_map['Country'] == sel_country]
         
     # create map
     fig_map = go.Figure(
-        data = go.Choropleth(
+        data=go.Choropleth(
             # aspects that don't change with sel_country
-            colorscale = 'Viridis',
+            colorscale='Viridis',
             # colorbar_title = "Capacity (MW)", # don't use colorbar_title if specifying colorbar with dict, as below
-            colorbar = {
+            colorbar={
                 'title': 'Capacity (MW)',
                 'tickvals': values,
                 'ticktext': ticks,
             },
-            locationmode = 'ISO-3', # set of locations match entries in 'locations'
-            zauto = False,
-            zmin = min_val,
-            zmax = max_val,
+            locationmode='ISO-3', # set of locations match entries in 'locations'
+            zauto=False,
+            zmin=min_val,
+            zmax=max_val,
             
             # aspects that do change with sel_country:
-            locations = gcpt_map_sel['iso_alpha'],
-            z = gcpt_map_sel['capacity log10 + 1'], # data to be color-coded
+            locations=gcpt_map_sel['iso_alpha'],
+            z=gcpt_map_sel['capacity log10 + 1'], # data to be color-coded
             # use separate column for hover text with original capacity values
             # (data for choropleth is log scale)
-            hovertemplate = gcpt_map_sel['hover_text'],
+            hovertemplate=gcpt_map_sel['hover_text']
     ))
 
     # assign title and arrange
     fig_map.update_layout(
-        title_text = 'Operating Coal Power Capacity by Country',
+        title_text='Operating Coal Power Capacity by Country',
         # use margin to get title placement correct
-        margin = {'r':0,'t':100,'l':0,'b':0},
-        dragmode = False,
-        geo = dict(
+        margin={'r': 0, 't': 100, 'l': 0, 'b': 0},
+        dragmode=False,
+        geo=dict(
                 showframe=False,
                 showcoastlines=False,
                 projection_type='equirectangular',
@@ -163,16 +165,18 @@ def create_chart_choro(gcpt_map, sel_country):
                             
     return fig_map
 
+
 def update_chart_choro(fig_map, sel_country):
     sel_locations = gcpt_map[gcpt_map['Country']==sel_country]['iso_alpha']
-    fig_map.update_layout(locations = sel_locations)
+    fig_map.update_layout(locations=sel_locations)
     fig_map.update_geos(fitbounds="locations", visible=True)
     return fig_map
 
+
 # initialize with global view
 fig_map = create_chart_choro(
-    gcpt_map = gcpt_map, 
-    sel_country = 'all'
+    gcpt_map=gcpt_map,
+    sel_country='all'
 )
 
 # ===================================
@@ -192,9 +196,9 @@ gcpt_tableau_map_colors = {
   'mothballed': {'id': 8, 'text': 'Mothballed', 'color': '#9c755f'},
 }
 
+
 def create_chart_by_status(gcpt_status, sel_country):
     fig_status = go.Figure() # initialize
-    
     # select data for sel_country
     df = gcpt_status[gcpt_status['Country']==sel_country]
     statuses = df['Status'].unique().tolist()
@@ -204,34 +208,35 @@ def create_chart_by_status(gcpt_status, sel_country):
         color_status = gcpt_tableau_map_colors[status]['color']
 
         fig_status.add_trace(go.Bar(
-            x = df_status['Year'], 
-            y = df_status['Capacity (MW)'], 
-            name = status, 
-            marker_color = color_status,
-            hovertemplate = status + ': %{y:,.0f} MW<extra></extra>', # Capacity
+            x=df_status['Year'], 
+            y=df_status['Capacity (MW)'], 
+            name=status, 
+            marker_color=color_status,
+            hovertemplate=status + ': %{y:,.0f} MW<extra></extra>' # Capacity
         ))
 
     fig_status.update_layout(
-        barmode = 'stack',
-        title = 'Coal Power Capacity by Status',
-        yaxis = dict(
-            title = 'Megawatts (MW)',
+        barmode='stack',
+        title='Coal Power Capacity by Status',
+        yaxis=dict(
+            title='Megawatts (MW)',
         ),
-        legend = dict(
-            orientation = 'h',
-            yanchor = 'top',
-            y = -0.1,
-            xanchor = 'left',
-            x = 0,
-            traceorder = 'normal',
+        legend=dict(
+            orientation='h',
+            yanchor='top',
+            y=-0.1,
+            xanchor='left',
+            x=0,
+            traceorder='normal',
         ),
     )
 
     return fig_status
 
+
 fig_status = create_chart_by_status(
-    gcpt_status = gcpt_status, 
-    sel_country = 'all')
+    gcpt_status=gcpt_status, 
+    sel_country='all')
 
 
 # ===================================
@@ -258,8 +263,8 @@ def create_chart_age_type(gcpt_age, sel_country):
     for decade in decades:
         if decade not in gcpt_age_sel_country.index:
             new_row_df = pd.DataFrame(
-                data = [[0]*len(technologies_in_order)], 
-                columns = technologies_in_order, 
+                data=[[0]*len(technologies_in_order)], 
+                columns=technologies_in_order, 
                 index=[decade]
                 )
             gcpt_age_sel_country = gcpt_age_sel_country.concat(new_row_df)
@@ -278,27 +283,27 @@ def create_chart_age_type(gcpt_age, sel_country):
     gcpt_age_sel_country.columns.tolist()
     for technology in technologies_in_order:
         fig_age.add_trace(go.Bar(
-            name = technology,
-            x = gcpt_age_sel_country[technology], 
-            y = gcpt_age_sel_country.index, 
-            orientation = 'h',
-            marker_color = age_tech_pallette[technology],
-            hovertemplate = technology + ': %{x:,.0f} MW<extra></extra>',
+            name=technology,
+            x=gcpt_age_sel_country[technology], 
+            y=gcpt_age_sel_country.index, 
+            orientation='h',
+            marker_color=age_tech_pallette[technology],
+            hovertemplate=technology + ': %{x:,.0f} MW<extra></extra>',
         ))
 
     fig_age.update_layout(
-        barmode = 'stack',
-        title = 'Operating Coal Power Capacity by Age and Type',
-        xaxis = dict(
-            title = 'Megawatts (MW)',
+        barmode='stack',
+        title='Operating Coal Power Capacity by Age and Type',
+        xaxis=dict(
+            title='Megawatts (MW)',
         ),
-        legend = dict(
-            orientation = 'h',
-            yanchor = 'top',
-            y = -0.25,
-            xanchor = 'left',
-            x = 0,
-            traceorder = 'normal',
+        legend=dict(
+            orientation='h',
+            yanchor='top',
+            y=-0.25,
+            xanchor='left',
+            x=0,
+            traceorder='normal',
         ),
     )
 
@@ -308,8 +313,8 @@ def create_chart_age_type(gcpt_age, sel_country):
     return fig_age
 
 fig_age = create_chart_age_type(
-    gcpt_age = gcpt_age, 
-    sel_country = 'all')
+    gcpt_age=gcpt_age, 
+    sel_country='all')
 
 # ===================================
 # ### Coal Power Additions and Retirements
@@ -334,10 +339,10 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
             df_status[status] = df_status[status] * float(-1)
 
         fig_add.add_trace(go.Bar(
-            x = df_status.index, 
-            y = df_status[status], # values are capacities (MW)
+            x=df_status.index, 
+            y=df_status[status], # values are capacities (MW)
             name=status, 
-            hovertemplate = status + ': %{y:,.0f} MW<extra></extra>',
+            hovertemplate=status + ': %{y:,.0f} MW<extra></extra>',
         ))
 
     # add line for net additions
@@ -345,9 +350,9 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
     df_status = df[['Year', 'Net added']].set_index('Year')
 
     fig_add.add_trace(go.Scatter(
-        x = df_status.index,
-        y = df_status['Net added'],
-        name = 'Net added',
+        x=df_status.index,
+        y=df_status['Net added'],
+        name='Net added',
         mode='markers',
         marker_color='black',
         hoverinfo='skip',
@@ -356,16 +361,16 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
     # update overall layout
     fig_add.update_layout(
         barmode='relative', # instead of 'stack', to have values be negative
-        title = 'Coal Power Capacity Added or Retired',
-        yaxis = dict(
-            title = 'Megawatts (MW)',
+        title='Coal Power Capacity Added or Retired',
+        yaxis=dict(
+            title='Megawatts (MW)',
         ),
-        legend = dict(
-            orientation = 'h',
-            yanchor = 'top',
-            y = -0.1,
-            xanchor = 'left',
-            x = 0,
+        legend=dict(
+            orientation='h',
+            yanchor='top',
+            y=-0.1,
+            xanchor='left',
+            x=0,
         ),
     )
 
@@ -373,8 +378,8 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
 
 # initialize chart with global data
 fig_add = create_chart_additions_retirements(
-    gcpt_add = gcpt_add, 
-    sel_country = 'all'
+    gcpt_add=gcpt_add,
+    sel_country='all'
 )
 
 # ===================================
@@ -425,7 +430,7 @@ add_graph = dcc.Graph(
 
 if layout_chosen == '1 column':
     # 1-column version
-    app.layout = dbc.Container(fluid = True, children = [
+    app.layout = dbc.Container(fluid=True, children=[
         dbc.Row([dbc.Col(country_dropdown)], align='center'),
         dbc.Row([dbc.Col(choro_graph)], align='center'),
         dbc.Row([dbc.Col(status_graph)], align='center'),
@@ -436,13 +441,13 @@ if layout_chosen == '1 column':
 elif layout_chosen == '2 columns':
     # 2-column version
     # download based on: https://dash.plotly.com/dash-core-components/download
-    app.layout = dbc.Container(fluid = True, children = [
+    app.layout = dbc.Container(fluid=True, children=[
         dbc.Row([
             dbc.Col([
                 dbc.Row(dropdown_title),
                 dbc.Row(country_dropdown),
-            ], md = 4),
-            dbc.Col([], xl = 5), # spacer
+            ], md=4),
+            dbc.Col([], xl=5) # spacer
             # # section for download button:
             # dbc.Col([
             #     dbc.Row(download_text),
@@ -452,12 +457,12 @@ elif layout_chosen == '2 columns':
             # ], md = 2),
         ]),
         dbc.Row([
-            dbc.Col(choro_graph, xl = 6, align="start"),
-            dbc.Col(status_graph, xl = 6, align="start"),
+            dbc.Col(choro_graph, xl=6, align="start"),
+            dbc.Col(status_graph, xl=6, align="start"),
         ]),
         dbc.Row([
-            dbc.Col(age_graph, xl = 6, align="start"),
-            dbc.Col(add_graph, xl = 6, align="start"),
+            dbc.Col(age_graph, xl=6, align="start"),
+            dbc.Col(add_graph, xl=6, align="start"),
         ]),
         dbc.Row([
             dbc.Col([
@@ -476,20 +481,20 @@ elif layout_chosen == '2 columns':
 )
 def update_figure(sel_country):
     fig_map = create_chart_choro(
-        gcpt_map = gcpt_map, 
-        sel_country = sel_country
+        gcpt_map=gcpt_map, 
+        sel_country=sel_country
     )
     fig_status = create_chart_by_status(
-        gcpt_status = gcpt_status, 
-        sel_country = sel_country
+        gcpt_status=gcpt_status, 
+        sel_country=sel_country
     )
     fig_age = create_chart_age_type(
-        gcpt_age = gcpt_age,
-        sel_country = sel_country
+        gcpt_age=gcpt_age,
+        sel_country=sel_country
     )
     fig_add = create_chart_additions_retirements(
-        gcpt_add = gcpt_add, 
-        sel_country = sel_country
+        gcpt_add=gcpt_add, 
+        sel_country=sel_country
     )
     fig_map.update_layout(transition_duration=500)
     fig_status.update_layout(transition_duration=500)
