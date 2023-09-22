@@ -14,8 +14,7 @@ import plotly.graph_objs as go
 
 # ===================================
 # Key parameters
-# release_date = 'July 2023'
-release_date = 'August 2023'
+release_date = 'July 2023'
 # ===================================
 def sort_status(df):
     """
@@ -321,6 +320,14 @@ fig_age = create_chart_age_type(
 # * Has bars and line; see https://plotly.com/python/graphing-multiple-chart-types/
 
 def create_chart_additions_retirements(gcpt_add, sel_country):
+    # find net added for country all for each year
+    gcpt_add_all = gcpt_add[(gcpt_add['Country'] == 'all')]
+
+    print(gcpt_add_all)
+    # drop all rows that have all 0
+    gcpt_add_all = gcpt_add[(gcpt_add['Country'] == 'all') & (gcpt_add['Added (MW)'] == 0) & (gcpt_add['Retired (MW)'] == 0) & (gcpt_add['Net added (MW)'] == 0)]
+    print(gcpt_add_all)
+
     fig_add = go.Figure() # initialize figure
 
     df = gcpt_add[gcpt_add['Country']==sel_country]
@@ -330,7 +337,7 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
         'Retired (MW)': 'Retired',
         'Net added (MW)': 'Net added',
     })
-    
+    # making the bar chart with added and retired columns only
     for status in ['Added', 'Retired']:
         df_status = df[['Year', status]].set_index('Year')
 
@@ -348,7 +355,7 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
     # add line for net additions
     # https://plotly.com/python/graphing-multiple-chart-types/#line-chart-and-a-bar-chart
     df_status = df[['Year', 'Net added']].set_index('Year')
-
+    # adding dot markers to display net added 
     fig_add.add_trace(go.Scatter(
         x=df_status.index,
         y=df_status['Net added'],
