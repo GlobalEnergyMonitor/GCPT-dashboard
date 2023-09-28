@@ -323,10 +323,8 @@ def create_chart_additions_retirements(gcpt_add, sel_country):
     # find net added for country all for each year
     gcpt_add_all = gcpt_add[(gcpt_add['Country'] == 'all')]
 
-    print(gcpt_add_all)
     # drop all rows that have all 0
     gcpt_add_all = gcpt_add[(gcpt_add['Country'] == 'all') & (gcpt_add['Added (MW)'] == 0) & (gcpt_add['Retired (MW)'] == 0) & (gcpt_add['Net added (MW)'] == 0)]
-    print(gcpt_add_all)
 
     fig_add = go.Figure() # initialize figure
 
